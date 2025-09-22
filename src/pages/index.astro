@@ -1,28 +1,27 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-
 <Layout title="Primis Nexus — Landing">
   <h1>Primis Nexus</h1>
   <p>פורטל תוכן לשיווק, מדידה ואנליטיקה.</p>
 
-  <!-- קישור לעמוד פנימי: יורה event לפני הניווט -->
+  <!-- קישור פנימי: שולח nav_internal ואז מנווט -->
   <p>
     <a href="/guide/intro"
-       onclick="event.preventDefault();(async()=>{const m=await import('/src/lib/nexus.js');await m.fire('nav_internal',{to:'/guide/intro'});location.href='/guide/intro';})()">
+       onclick="event.preventDefault(); window.__nxNav('internal','/guide/intro')">
       קרא מדריך פתיחה
     </a>
   </p>
 
-  <!-- קישור החוצה: יורה event לפני היציאה -->
+  <!-- קישור חיצוני: שולח nav_outbound ואז נפתח בלשונית חדשה -->
   <p>
     <a href="https://primis.co" target="_blank" rel="noopener"
-       onclick="event.preventDefault();(async()=>{const m=await import('/src/lib/nexus.js');await m.fire('nav_outbound',{to:'https://primis.co'});window.open('https://primis.co','_blank','noopener');})()">
+       onclick="event.preventDefault(); window.__nxNav('outbound','https://primis.co')">
       בקר באתר Primis
     </a>
   </p>
 
-  <!-- קישור לדשבורד החי -->
+  <!-- לינק לדשבורד החי -->
   <p><a href="/nexus-mini"><strong>Mini Dashboard (LIVE)</strong></a></p>
 
   <!-- סטטוס + כפתורי דיבוג -->
@@ -34,7 +33,6 @@ import Layout from '../layouts/Layout.astro';
   </p>
 </Layout>
 
-<!-- סקריפט צד-לקוח: שליחת אירועים ישירות ל-API -->
 <script>
   const API_BASE = import.meta.env.PUBLIC_RUN_HOST;
   const elBase = document.getElementById("apiBase");
@@ -44,11 +42,8 @@ import Layout from '../layouts/Layout.astro';
   function ok(m){ if(elStat) elStat.innerHTML = '<span style="color:#0a7;font-weight:600">✓</span> ' + m; }
   function er(m){ if(elStat) elStat.innerHTML = '<span style="color:#b00;font-weight:600">✗</span> ' + m; }
 
-  async function send(kind){
-    if(!API_BASE){ er("חסר PUBLIC_RUN_HOST"); return; }
-    const payload = (kind === "pixel")
-      ? { click_id: crypto.randomUUID(), payload: { type: "from_pixel", path: location.pathname } }
-      : { click_id: crypto.randomUUID(), payload: { type: "from_post",  path: location.pathname } };
+  async function sendPayload(payload) {
+    if(!API_BASE){ er("חסר PUBLIC_RUN_HOST"); return false; }
     try{
       const r = await fetch(`${API_BASE}/api/events`, {
         method: "POST",
@@ -56,15 +51,26 @@ import Layout from '../layouts/Layout.astro';
         mode: "cors",
         body: JSON.stringify(payload)
       });
-      if(!r.ok){ er(`HTTP ${r.status}`); return; }
+      if(!r.ok){ er(`HTTP ${r.status}`); return false; }
       const j = await r.json();
       ok(`נשלח! id=${j.id || "ok"}`);
-    }catch(e){
-      console.error(e);
-      er("Failed to send (CORS/Network)");
-    }
+      return true;
+    }catch(e){ console.error(e); er("Failed to send (CORS/Network)"); return false; }
   }
 
-  document.getElementById("btnPost")?.addEventListener("click", () => send("post"));
-  document.getElementById("btnPixel")?.addEventListener("click", () => send("pixel"));
+  // דיבוג: POST/PIXEL
+  document.getElementById("btnPost")?.addEventListener("click", () =>
+    sendPayload({ click_id: crypto.randomUUID(), payload:{ type:"from_post",  path: location.pathname } })
+  );
+  document.getElementById("btnPixel")?.addEventListener("click", () =>
+    sendPayload({ click_id: crypto.randomUUID(), payload:{ type:"from_pixel", path: location.pathname } })
+  );
+
+  // ניווטים עם ירי אירוע לפני התקדמות
+  window.__nxNav = async (kind, to) => {
+    const type = kind === 'internal' ? 'nav_internal' : 'nav_outbound';
+    await sendPayload({ click_id: crypto.randomUUID(), payload:{ type, path: location.pathname, to } });
+    if (kind === 'internal') location.href = to;
+    else window.open(to, '_blank', 'noopener');
+  };
 </script>
