@@ -1,13 +1,15 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
+
 <Layout title="Primis Nexus — Landing">
   <h1>Primis Nexus</h1>
   <p>פורטל תוכן לשיווק, מדידה ואנליטיקה.</p>
 
   <!-- קישור לעמוד פנימי: יורה event לפני הניווט -->
   <p>
-    <a href="/guide/intro" onclick="event.preventDefault(); (async()=>{const m=await import('/src/lib/nexus.js'); await m.fire('nav_internal',{to:'/guide/intro'}); location.href='/guide/intro';})()">
+    <a href="/guide/intro"
+       onclick="event.preventDefault();(async()=>{const m=await import('/src/lib/nexus.js');await m.fire('nav_internal',{to:'/guide/intro'});location.href='/guide/intro';})()">
       קרא מדריך פתיחה
     </a>
   </p>
@@ -15,22 +17,32 @@ import Layout from '../layouts/Layout.astro';
   <!-- קישור החוצה: יורה event לפני היציאה -->
   <p>
     <a href="https://primis.co" target="_blank" rel="noopener"
-       onclick="event.preventDefault(); (async()=>{const m=await import('/src/lib/nexus.js'); await m.fire('nav_outbound',{to:'https://primis.co'}); window.open('https://primis.co','_blank','noopener');})()">
+       onclick="event.preventDefault();(async()=>{const m=await import('/src/lib/nexus.js');await m.fire('nav_outbound',{to:'https://primis.co'});window.open('https://primis.co','_blank','noopener');})()">
       בקר באתר Primis
     </a>
   </p>
+
+  <!-- קישור לדשבורד החי -->
+  <p><a href="/nexus-mini"><strong>Mini Dashboard (LIVE)</strong></a></p>
+
+  <!-- סטטוס + כפתורי דיבוג -->
+  <p class="muted">API base: <code id="apiBase"></code></p>
+  <p id="lastStatus" style="opacity:.8">מוכן לשליחה…</p>
+  <p>
+    <button id="btnPost">שלח POST</button>
+    <button id="btnPixel">שלח PIXEL</button>
+  </p>
 </Layout>
 
-<!-- DEBUG: Shoot events directly to API -->
-<p><button id="dbg-post">שלח POST</button> <button id="dbg-pixel">שלח PIXEL</button></p>
+<!-- סקריפט צד-לקוח: שליחת אירועים ישירות ל-API -->
 <script>
   const API_BASE = import.meta.env.PUBLIC_RUN_HOST;
   const elBase = document.getElementById("apiBase");
   const elStat = document.getElementById("lastStatus");
-  elBase && (elBase.textContent = API_BASE || "(MISSING PUBLIC_RUN_HOST)");
+  if (elBase) elBase.textContent = API_BASE || "(MISSING PUBLIC_RUN_HOST)";
 
-  function ok(m){ elStat && (elStat.innerHTML = '<span style="color:#0a7;font-weight:600">✓</span> ' + m); }
-  function er(m){ elStat && (elStat.innerHTML = '<span style="color:#b00;font-weight:600">✗</span> ' + m); }
+  function ok(m){ if(elStat) elStat.innerHTML = '<span style="color:#0a7;font-weight:600">✓</span> ' + m; }
+  function er(m){ if(elStat) elStat.innerHTML = '<span style="color:#b00;font-weight:600">✗</span> ' + m; }
 
   async function send(kind){
     if(!API_BASE){ er("חסר PUBLIC_RUN_HOST"); return; }
@@ -47,10 +59,12 @@ import Layout from '../layouts/Layout.astro';
       if(!r.ok){ er(`HTTP ${r.status}`); return; }
       const j = await r.json();
       ok(`נשלח! id=${j.id || "ok"}`);
-    }catch(e){ console.error(e); er("Failed to send (CORS/Network)"); }
+    }catch(e){
+      console.error(e);
+      er("Failed to send (CORS/Network)");
+    }
   }
 
   document.getElementById("btnPost")?.addEventListener("click", () => send("post"));
   document.getElementById("btnPixel")?.addEventListener("click", () => send("pixel"));
 </script>
-
