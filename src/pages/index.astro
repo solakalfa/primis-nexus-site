@@ -1,11 +1,47 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
+<Layout title="Primis Nexus — Landing">
+  <h1>Primis Nexus</h1>
+  <p>פורטל תוכן לשיווק, מדידה ואנליטיקה.</p>
 
-<Layout>
-	<Welcome />
+  <!-- קישור לעמוד פנימי: יורה event לפני הניווט -->
+  <p>
+    <a href="/guide/intro" onclick="event.preventDefault(); (async()=>{const m=await import('/src/lib/nexus.js'); await m.fire('nav_internal',{to:'/guide/intro'}); location.href='/guide/intro';})()">
+      קרא מדריך פתיחה
+    </a>
+  </p>
+
+  <!-- קישור החוצה: יורה event לפני היציאה -->
+  <p>
+    <a href="https://primis.co" target="_blank" rel="noopener"
+       onclick="event.preventDefault(); (async()=>{const m=await import('/src/lib/nexus.js'); await m.fire('nav_outbound',{to:'https://primis.co'}); window.open('https://primis.co','_blank','noopener');})()">
+      בקר באתר Primis
+    </a>
+  </p>
 </Layout>
+
+<!-- DEBUG: Shoot events directly to API -->
+<p><button id="dbg-post">שלח POST</button> <button id="dbg-pixel">שלח PIXEL</button></p>
+<script>
+(function(){
+  var RUN='https://primis-nexus-api-5tcyo5pziq-uc.a.run.app';  // יוחלף מיד בכתובת Cloud Run
+  var post=document.getElementById('dbg-post');
+  var pix=document.getElementById('dbg-pixel');
+
+  if(post) post.onclick=function(){
+    fetch(RUN+'/api/events',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({click_id:'browser-test',payload:{type:'from_post',ts:Date.now()}})
+    }).then(r=>r.text()).then(t=>console.log('POST→',t)).catch(console.error);
+  };
+
+  if(pix) pix.onclick=function(){
+    var u = RUN+'/api/events?payload='+encodeURIComponent(JSON.stringify({type:'from_pixel',ts:Date.now()}))+'&click_id=browser-test';
+    new Image().src = u;
+    console.log('PIXEL→',u);
+  };
+})();
+</script>
+

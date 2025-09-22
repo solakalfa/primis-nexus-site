@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Article — Demo">
+  <h1>מאמר: מדידת כניסות</h1>
+  <p>טקסט דמו...</p>
+  <button onclick="(async()=>{ const m=await import('/src/lib/nexus.js'); await m.fire('cta_click',{slug:'demo'}); import('/src/lib/nexus.js').then(m=>location.href='/convert?cid='+m.cid()); })()">
+    המשך → עמוד המרה
+  </button>
+</Layout>

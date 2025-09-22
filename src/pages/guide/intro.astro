@@ -1,0 +1,12 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Guide — Intro">
+  <h1>מדריך פתיחה</h1>
+  <p>טקסט דמו על שיווק ומדידה.</p>
+  <script type="module">
+    import { fire } from '/src/lib/nexus.js';
+    fire('article_view', {slug:'intro'});
+  </script>
+  <p><a href="/">חזרה לדף הבית</a></p>
+</Layout>

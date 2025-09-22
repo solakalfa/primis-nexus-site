@@ -1,0 +1,13 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Conversion — Thank you">
+  <h1>תודה!</h1>
+  <script type="module">
+    import { cid, fire } from '/src/lib/nexus.js';
+    const urlCid = new URLSearchParams(location.search).get('cid');
+    if (urlCid) localStorage.cid = urlCid; // יישור קו ל-click_id
+    fire('conversion', { goal:'demo' });
+  </script>
+  <p><a href="/">חזרה לבית</a></p>
+</Layout>

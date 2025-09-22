@@ -1,0 +1,20 @@
+---
+const RUN = import.meta.env.PUBLIC_RUN_HOST || '';
+---
+<html><body>
+  <h3>Ping</h3>
+  <button id="post">POST /api/events</button>
+  <button id="pixel">GET /api/events?payload=...</button>
+  <pre id="out"></pre>
+  <script type="module">
+    const out = (t)=>document.getElementById('out').textContent=t;
+    document.getElementById('post').onclick = ()=>fetch(`${RUN}/api/events`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({click_id:'browser-test',payload:{type:'from_post',ts:Date.now()}})
+    }).then(r=>r.text()).then(out).catch(e=>out(e.message));
+    document.getElementById('pixel').onclick = ()=>{
+      const u = `${RUN}/api/events?payload=${encodeURIComponent(JSON.stringify({type:'from_pixel',ts:Date.now()}))}&click_id=browser-test`;
+      new Image().src = u; out('pixel sent → '+u);
+    };
+  </script>
+</body></html>

@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Debug">
+  <h1>Debug</h1>
+  <p id="cid"></p>
+  <button id="pv">pageview</button>
+  <button id="cta">cta_click</button>
+  <button id="conv">conversion</button>
+  <script type="module">
+    import { cid, fire } from '/src/lib/nexus.js';
+    const c = cid(); document.getElementById('cid').textContent = 'click_id=' + c;
+    document.getElementById('pv').onclick  = ()=>fire('pageview',{path:location.pathname});
+    document.getElementById('cta').onclick = ()=>fire('cta_click',{slug:'demo'});
+    document.getElementById('conv').onclick= ()=>fire('conversion',{goal:'demo'});
+  </script>
+</Layout>
