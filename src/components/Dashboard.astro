@@ -1,0 +1,39 @@
+---
+const API_BASE = import.meta.env.PUBLIC_RUN_HOST;
+---
+<section style="margin:1rem 0">
+  <h2>Mini Dashboard</h2>
+  <div style="font-weight:600">Total Events: <span id="nx-total">0</span></div>
+  <table border="1" cellpadding="6" cellspacing="0" style="margin-top:8px; width:100%; max-width:860px">
+    <thead>
+      <tr><th>Click ID</th><th>Type</th><th>Path</th></tr>
+    </thead>
+    <tbody id="nx-rows">
+      <tr><td colspan="3">Loading…</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<script>
+  const API_BASE = import.meta.env.PUBLIC_RUN_HOST;
+  async function load() {
+    try {
+      const r = await fetch(`${API_BASE}/api/events`, { credentials: "omit" });
+      const j = await r.json();
+      const items = (j.items || []).slice(0, 10);
+      document.getElementById("nx-total").textContent = (j.items || []).length;
+      const rows = items.map(e => `
+        <tr>
+          <td>${e.click_id ?? ""}</td>
+          <td>${e.payload?.type ?? ""}</td>
+          <td>${e.payload?.path ?? ""}</td>
+        </tr>`).join("");
+      document.getElementById("nx-rows").innerHTML = rows || `<tr><td colspan="3">No events</td></tr>`;
+    } catch (err) {
+      document.getElementById("nx-rows").innerHTML = `<tr><td colspan="3">Failed to fetch events</td></tr>`;
+      console.error(err);
+    }
+  }
+  load();
+  setInterval(load, 10000);
+</script>
