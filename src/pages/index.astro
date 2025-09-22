@@ -24,24 +24,33 @@ import Layout from '../layouts/Layout.astro';
 <!-- DEBUG: Shoot events directly to API -->
 <p><button id="dbg-post">שלח POST</button> <button id="dbg-pixel">שלח PIXEL</button></p>
 <script>
-(function(){
-  var RUN='https://primis-nexus-api-5tcyo5pziq-uc.a.run.app';  // יוחלף מיד בכתובת Cloud Run
-  var post=document.getElementById('dbg-post');
-  var pix=document.getElementById('dbg-pixel');
+  const API_BASE = import.meta.env.PUBLIC_RUN_HOST;
+  const elBase = document.getElementById("apiBase");
+  const elStat = document.getElementById("lastStatus");
+  elBase && (elBase.textContent = API_BASE || "(MISSING PUBLIC_RUN_HOST)");
 
-  if(post) post.onclick=function(){
-    fetch(RUN+'/api/events',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({click_id:'browser-test',payload:{type:'from_post',ts:Date.now()}})
-    }).then(r=>r.text()).then(t=>console.log('POST→',t)).catch(console.error);
-  };
+  function ok(m){ elStat && (elStat.innerHTML = '<span style="color:#0a7;font-weight:600">✓</span> ' + m); }
+  function er(m){ elStat && (elStat.innerHTML = '<span style="color:#b00;font-weight:600">✗</span> ' + m); }
 
-  if(pix) pix.onclick=function(){
-    var u = RUN+'/api/events?payload='+encodeURIComponent(JSON.stringify({type:'from_pixel',ts:Date.now()}))+'&click_id=browser-test';
-    new Image().src = u;
-    console.log('PIXEL→',u);
-  };
-})();
+  async function send(kind){
+    if(!API_BASE){ er("חסר PUBLIC_RUN_HOST"); return; }
+    const payload = (kind === "pixel")
+      ? { click_id: crypto.randomUUID(), payload: { type: "from_pixel", path: location.pathname } }
+      : { click_id: crypto.randomUUID(), payload: { type: "from_post",  path: location.pathname } };
+    try{
+      const r = await fetch(`${API_BASE}/api/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        mode: "cors",
+        body: JSON.stringify(payload)
+      });
+      if(!r.ok){ er(`HTTP ${r.status}`); return; }
+      const j = await r.json();
+      ok(`נשלח! id=${j.id || "ok"}`);
+    }catch(e){ console.error(e); er("Failed to send (CORS/Network)"); }
+  }
+
+  document.getElementById("btnPost")?.addEventListener("click", () => send("post"));
+  document.getElementById("btnPixel")?.addEventListener("click", () => send("pixel"));
 </script>
 
