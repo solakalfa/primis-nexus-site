@@ -4,36 +4,66 @@ const API_BASE = import.meta.env.PUBLIC_RUN_HOST;
 <section style="margin:1rem 0">
   <h2>Mini Dashboard</h2>
   <div style="font-weight:600">Total Events: <span id="nx-total">0</span></div>
-  <table border="1" cellpadding="6" cellspacing="0" style="margin-top:8px; width:100%; max-width:860px">
+  <table border="1" cellpadding="6" cellspacing="0" style="margin-top:8px; width:100%; max-width:1000px">
     <thead>
-      <tr><th>Click ID</th><th>Type</th><th>Path</th></tr>
+      <tr>
+        <th>#</th>
+        <th>Time</th>
+        <th>Click ID</th>
+        <th>Type</th>
+        <th>Path</th>
+      </tr>
     </thead>
     <tbody id="nx-rows">
-      <tr><td colspan="3">Loading…</td></tr>
+      <tr><td colspan="5">Loading…</td></tr>
     </tbody>
   </table>
 </section>
 
 <script>
   const API_BASE = import.meta.env.PUBLIC_RUN_HOST;
+
+  function fmt(t) {
+    try {
+      if (!t) return "";
+      // תומך במספר שמות שדה אפשריים
+      const d = new Date(t);
+      if (!isNaN(d)) return d.toLocaleString();
+      const n = Number(t);
+      if (!Number.isNaN(n)) return new Date(n).toLocaleString();
+      return String(t);
+    } catch (_) { return String(t ?? ""); }
+  }
+
   async function load() {
     try {
       const r = await fetch(`${API_BASE}/api/events`, { credentials: "omit" });
       const j = await r.json();
-      const items = (j.items || []).slice(0, 10);
-      document.getElementById("nx-total").textContent = (j.items || []).length;
-      const rows = items.map(e => `
-        <tr>
+      const items = (j.items || []);
+      document.getElementById("nx-total").textContent = items.length;
+
+      const rows = items.slice(0, 20).map((e, i) => {
+        const t = e.created_at || e.ts || e.time || e.at || e.when;
+        const type = (e.payload && e.payload.type) || "";
+        const path = (e.payload && e.payload.path) || "";
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${fmt(t)}</td>
           <td>${e.click_id ?? ""}</td>
-          <td>${e.payload?.type ?? ""}</td>
-          <td>${e.payload?.path ?? ""}</td>
-        </tr>`).join("");
-      document.getElementById("nx-rows").innerHTML = rows || `<tr><td colspan="3">No events</td></tr>`;
+          <td>${type}</td>
+          <td>${path}</td>
+        </tr>`;
+      }).join("");
+
+      document.getElementById("nx-rows").innerHTML =
+        rows || `<tr><td colspan="5">No events</td></tr>`;
     } catch (err) {
-      document.getElementById("nx-rows").innerHTML = `<tr><td colspan="3">Failed to fetch events</td></tr>`;
       console.error(err);
+      document.getElementById("nx-rows").innerHTML =
+        `<tr><td colspan="5">Failed to fetch events</td></tr>`;
     }
   }
+
   load();
   setInterval(load, 10000);
 </script>
