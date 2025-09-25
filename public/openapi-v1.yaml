@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Primis Nexus API (v1)
-  version: 1.0.0
+  title: Primis Nexus API (functional v1)
+  version: "1.0.0"
 servers:
   - url: /api/v1
 paths:
@@ -11,3 +11,107 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  db: { type: boolean }
+                  now: { type: string, format: date-time }
+                  traceId: { type: string }
+  /events:
+    post:
+      summary: Ingest event (click/page_view/value/conversion)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              example:
+                type: page_view
+                click_id: fbclid-123
+                source: facebook
+                campaign_id: "123"
+                adset_id: "456"
+                ad_id: "789"
+                ts: "2025-09-25T19:55:00Z"
+      responses:
+        '200': { description: accepted }
+  /convert:
+    post:
+      summary: Register conversion joined to click
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [click_id, value, currency]
+              properties:
+                click_id: { type: string }
+                value: { type: number }
+                currency: { type: string, example: USD }
+                channel_id: { type: string, description: AdSense channel id }
+                meta: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: stored + pushed (near-RT to CAPI) }
+  /reports:
+    get:
+      summary: Pull reporting
+      parameters:
+        - in: query
+          name: start_date
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: end_date
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: source
+          schema: { type: string, example: facebook }
+        - in: query
+          name: campaign_id
+          schema: { type: string }
+        - in: query
+          name: adset_id
+          schema: { type: string }
+        - in: query
+          name: ad_id
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        '200':
+          description: results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        source: { type: string }
+                        campaign_id: { type: string }
+                        adset_id: { type: string }
+                        ad_id: { type: string }
+                        country: { type: string, example: US }
+                        revenue: { type: number }
+                        conversions: { type: integer }
+                        impressions: { type: integer }
+                  summary:
+                    type: object
+                    properties:
+                      revenue: { type: number }
+                      conversions: { type: integer }
+                      impressions: { type: integer }
