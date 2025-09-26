@@ -1,0 +1,15 @@
+---
+import { getCollection } from 'astro:content';
+const posts = await getCollection('articles');
+---
+<html lang="he" dir="rtl">
+  <head><meta charset="utf-8" /><title>מאמרים</title></head>
+  <body>
+    <h1>מאמרים</h1>
+    <ul>
+      {posts.map(p => (
+        <li><a href={`/articles/${p.slug}/`}>{p.data.title}</a></li>
+      ))}
+    </ul>
+  </body>
+</html>

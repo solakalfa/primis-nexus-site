@@ -1,0 +1,1 @@
+  return posts.map(p = params: { slug: p.slug } }));

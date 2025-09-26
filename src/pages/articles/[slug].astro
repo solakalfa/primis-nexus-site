@@ -1,0 +1,27 @@
+---
+import { getCollection, getEntryBySlug } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('articles');
+  return posts.map(p => ({ params: { slug: p.slug } }));
+}
+
+const { slug } = Astro.params;
+const post = await getEntryBySlug('articles', slug);
+if (!post) { throw new Error('Article not found'); }
+const { Content } = await post.render();
+---
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <title>{post.data.title}</title>
+    <meta name="description" content={post.data.description || ''} />
+  </head>
+  <body>
+    <article>
+      <h1>{post.data.title}</h1>
+      <Content />
+    </article>
+    <p><a href="/articles">← חזרה לרשימת המאמרים</a></p>
+  </body>
+</html>
